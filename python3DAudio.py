@@ -27,9 +27,9 @@ fileName = ""
 paused = False
 
 pygame.mixer.init()
-channel0 = pygame.mixer.Channel(0)
+channel0 = pygame.mixer.Channel(0) #left1
 channel0.set_volume(0.5, 0.0)
-channel1 = pygame.mixer.Channel(1)
+channel1 = pygame.mixer.Channel(1) #right1
 channel1.set_volume(0.0, 0.5)
 
 #################### Subroutines ####################
@@ -90,6 +90,13 @@ def volumeChange(newX, newY):
 
     leftIntensity = ((math.sin(angle-math.pi)/2)+0.5) * intensityMultiplier
     rightIntensity = ((math.sin(angle)/2)+0.5) * intensityMultiplier
+
+    if leftIntensity < 0.01:
+        leftIntensity = 0.01 #(minimum volume level)
+    
+    if rightIntensity < 0.01:
+        rightIntensity = 0.01 #(minimum volume level)
+
     print(leftIntensity, rightIntensity)
     
     channel0.set_volume(leftIntensity, 0.0)
