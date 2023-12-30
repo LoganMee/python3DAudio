@@ -25,6 +25,7 @@ root.geometry("800x600")
 filePath = ""
 fileName = ""
 paused = False
+minimumVolume = 0.03 #minimum volume at 0 distance
 
 pygame.mixer.init()
 channel0 = pygame.mixer.Channel(0) #left1
@@ -77,7 +78,7 @@ def move(event):
     volumeChange(newX, newY)
 
 def volumeChange(newX, newY):
-    global canvasCentre, channel0, channel1
+    global canvasCentre, minimumVolume, channel0, channel1
 
     distance = distanceBetweenPoints(canvasCentre[0], canvasCentre[1], newX, newY)
     distanceScaled = distance/25
@@ -91,11 +92,11 @@ def volumeChange(newX, newY):
     leftIntensity = ((math.sin(angle-math.pi)/2)+0.5) * intensityMultiplier
     rightIntensity = ((math.sin(angle)/2)+0.5) * intensityMultiplier
 
-    if leftIntensity < 0.01:
-        leftIntensity = 0.01 #(minimum volume level)
+    if leftIntensity < minimumVolume:
+        leftIntensity = minimumVolume * intensityMultiplier #(minimum volume level)
     
-    if rightIntensity < 0.01:
-        rightIntensity = 0.01 #(minimum volume level)
+    if rightIntensity < minimumVolume:
+        rightIntensity = minimumVolume * intensityMultiplier #(minimum volume level)
 
     print(leftIntensity, rightIntensity)
     
