@@ -1,9 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
-import math
-import pygame
-import os
-import time
+import pygame, math, os, time, threading
 
 #User Settings
 userGender = "male"
@@ -54,12 +51,14 @@ class Audio3DInterface:
 
         self.playButtonImg = PhotoImage(file="play.png")
         self.pauseButtonImg = PhotoImage(file="pause.png")
+
+        self.orbit = False
     
+    #################### Subroutines ####################
     def run(self):
         self.createWidgets()
         self.root.mainloop()
     
-    #################### Subroutines ####################
     #Menu subroutines
     def openFile(self):
         self.filePath = filedialog.askopenfilename()
@@ -88,6 +87,20 @@ class Audio3DInterface:
         canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
         self.volumeChange(newX, newY, canvasCentre)
 
+    def orbitAudio(self, audioSource, radius, canvas, canvasCentre, orbitRadius):
+        self.orbit = True
+        canvas.moveto(audioSource, canvasCentre[0], canvasCentre[1] + orbitRadius)
+        angle = 0
+        while self.orbit == True and self.paused == False:
+            angle += (1/72*math.pi)
+            newX = canvasCentre[0] + (math.sin(angle) * orbitRadius)
+            newY = canvasCentre[1] + (math.cos(angle) * orbitRadius)
+
+            canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
+            self.volumeChange(newX, newY, canvasCentre)
+
+            time.sleep(5/144)
+
     def volumeChange(self, newX, newY, canvasCentre):
         distance = distanceBetweenPoints(canvasCentre[0], canvasCentre[1], newX, newY)
         distanceScaled = distance/25
@@ -100,12 +113,6 @@ class Audio3DInterface:
 
         leftIntensity = ((((math.sin(angle-math.pi)/2)+0.5)/(3/2))+(1/3)) * intensityMultiplier #minimum audio level of 1/3
         rightIntensity = ((((math.sin(angle)/2)+0.5)/(3/2))+(1/3)) * intensityMultiplier
-
-        # if leftIntensity < self.minimumVolume:
-        #     leftIntensity = self.minimumVolume * intensityMultiplier #(minimum volume level)
-        
-        # if rightIntensity < self.minimumVolume:
-        #     rightIntensity = self.minimumVolume * intensityMultiplier #(minimum volume level)
 
         print(leftIntensity, rightIntensity)
         
@@ -144,6 +151,10 @@ class Audio3DInterface:
         pauseButton = Button(self.controlsFrame, image=self.pauseButtonImg, borderwidth=0, command=lambda:self.pauseMusic(playbackText))
         playButton.grid(row=1, column=0, padx=7, pady=10)
         pauseButton.grid(row=1, column=1, padx=7, pady=10)
+
+        #orbit
+        orbitButton = Button(self.controlsFrame, text="Orbit", command=lambda:threading.Thread(target=self.orbitAudio, args=(audioSource, radius, canvas, canvasCentre, 100)).start())
+        orbitButton.grid(row=2, column=0, padx=7, pady=10)
 
 
 
