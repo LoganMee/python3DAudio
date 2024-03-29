@@ -35,6 +35,8 @@ class Audio3DInterface:
         
         self.mainFrame = Frame(self.root)
         self.mainFrame.grid(column=0, row=0, padx=10, pady=10)
+        self.sideBar = Frame(self.root)
+        self.sideBar.grid(column=1, row=0, padx=10, pady=10)
         self.controlsFrame = Frame(self.root)
         self.controlsFrame.grid(column=0, row=1, padx=10, pady=10)
 
@@ -52,7 +54,7 @@ class Audio3DInterface:
         self.playButtonImg = PhotoImage(file="play.png")
         self.pauseButtonImg = PhotoImage(file="pause.png")
 
-        self.orbit = False
+        self.mode = IntVar()
     
     #################### Subroutines ####################
     def run(self):
@@ -82,17 +84,24 @@ class Audio3DInterface:
         playbackText.config(text="Paused")
  
     #Canvas subroutines
-    def move(self, event, audioSource, radius, canvas, canvasCentre):
+    def move(self, event, audioSource, radius, canvas, canvasCentre, canvasHeight, canvasWidth):
         newX = event.x
         newY = event.y
-        canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
-        self.volumeChange(newX, newY, canvasCentre)
+        if 0 <= newX <= canvasWidth and 0 <= newY <= canvasHeight: #Stops audio source from being dragged outside canvas
+            canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
+            self.volumeChange(newX, newY, canvasCentre)
+    
+    def clickMode(self, audioSource, radius, canvas, canvasCentre, canvasHeight, canvasWidth):
+        canvas.bind('<B1-Motion>', lambda event:self.move(event, audioSource, radius, canvas, canvasCentre, canvasHeight, canvasWidth))
+    
+    def disableClickMode(self, canvas):
+        canvas.unbind('<B1-Motion>')
 
     def orbitAudio(self, audioSource, radius, canvas, canvasCentre, orbitRadius):
-        self.orbit = True
+        self.disableClickMode(canvas)
         canvas.moveto(audioSource, canvasCentre[0], canvasCentre[1] + orbitRadius)
         angle = 0
-        while self.orbit == True and self.paused == False:
+        while self.mode.get() == 1 and self.paused == False:
             angle += (1/72*math.pi)
             newX = canvasCentre[0] + (math.sin(angle) * orbitRadius)
             newY = canvasCentre[1] + (math.cos(angle) * orbitRadius)
@@ -133,7 +142,7 @@ class Audio3DInterface:
         audioSource = canvas.create_oval(canvasCentre[0]-radius/2, canvasCentre[1]-radius*2, canvasCentre[0]+radius/2, canvasCentre[1]-radius, outline="black", fill="Grey", width=2)
         canvas.grid(column=0, row=0)
 
-        canvas.bind('<B1-Motion>', lambda event:self.move(event, audioSource, radius, canvas, canvasCentre))
+        canvas.bind('<B1-Motion>', lambda event:self.move(event, audioSource, radius, canvas, canvasCentre, canvasHeight, canvasWidth))
 
         #Menu
         menubar = Menu(self.root)
@@ -144,7 +153,7 @@ class Audio3DInterface:
         fileMenu.add_command(label="Open", command=self.openFile)
 
         #Info Bar
-        playbackText = Label(self.controlsFrame, text = "No song playing")
+        playbackText = Label(self.controlsFrame, text="No song playing")
         playbackText.grid(column=0, row=0, columnspan=2)
 
         #Buttons
@@ -153,9 +162,29 @@ class Audio3DInterface:
         playButton.grid(row=1, column=0, padx=7, pady=10)
         pauseButton.grid(row=1, column=1, padx=7, pady=10)
 
-        #orbit
-        orbitButton = Button(self.controlsFrame, text="Orbit", command=lambda:threading.Thread(target=self.orbitAudio, args=(audioSource, radius, canvas, canvasCentre, 100)).start())
-        orbitButton.grid(row=2, column=0, padx=7, pady=10)
+        #Modes
+        modesLabel = Label(self.sideBar, text="Modes:", width=15)
+        clickModeButton = Radiobutton(
+            self.sideBar,
+            text="Click",
+            variable=self.mode,
+            value=0,
+            indicator=0,
+            background="light blue",
+            width=15,
+            command=lambda:self.clickMode(audioSource, radius, canvas, canvasCentre, canvasHeight, canvasWidth))
+        orbitModeButton = Radiobutton(
+            self.sideBar,
+            text="Orbit",
+            variable=self.mode,
+            value=1,
+            indicator=0,
+            background="light blue",
+            width=15,
+            command=lambda:threading.Thread(target=self.orbitAudio, args=(audioSource, radius, canvas, canvasCentre, 100)).start())
+        modesLabel.grid(row=0, column=1, padx=10, pady=1)
+        clickModeButton.grid(row=1, column=1, padx=10, pady=1)
+        orbitModeButton.grid(row=2, column=1, padx=10, pady=1)
 
 
 
