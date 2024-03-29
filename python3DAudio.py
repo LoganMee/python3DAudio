@@ -40,8 +40,8 @@ class Audio3DInterface:
 
         self.filePath = ""
         self.fileName = ""
+        self.playing = False
         self.paused = False
-        self.minimumVolume = 0.03
 
         pygame.mixer.init()
         self.channel0 = pygame.mixer.Channel(0) #left1
@@ -66,10 +66,11 @@ class Audio3DInterface:
 
     #Button subroutines
     def playMusic(self, playbackText):
-        if not self.paused:
+        if not self.paused and self.playing == False:
             self.channel0.play(pygame.mixer.Sound(self.filePath))
             self.channel1.play(pygame.mixer.Sound(self.filePath))
             playbackText.config(text=f"Playing: {self.fileName}")
+            self.playing = True
         else:
             pygame.mixer.unpause()
             self.paused = False
@@ -79,7 +80,7 @@ class Audio3DInterface:
         pygame.mixer.pause()
         self.paused = True
         playbackText.config(text="Paused")
-
+ 
     #Canvas subroutines
     def move(self, event, audioSource, radius, canvas, canvasCentre):
         newX = event.x
