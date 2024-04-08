@@ -31,7 +31,7 @@ class Audio3DInterface:
     def __init__(self):
         self.root = Tk()
         self.root.title("3D Audio")
-        self.root.geometry("800x700")
+        self.root.geometry("700x700")
         
         self.mainFrame = Frame(self.root)
         self.mainFrame.grid(column=0, row=0, padx=10, pady=10)
@@ -55,6 +55,7 @@ class Audio3DInterface:
         self.pauseButtonImg = PhotoImage(file="pause.png")
 
         self.mode = IntVar()
+
     
     #################### Subroutines ####################
     def run(self):
@@ -101,15 +102,19 @@ class Audio3DInterface:
         self.disableClickMode(canvas)
         canvas.moveto(audioSource, canvasCentre[0], canvasCentre[1] + orbitRadius)
         angle = 0
-        while self.mode.get() == 1 and self.paused == False:
-            angle += (1/72*math.pi)
-            newX = canvasCentre[0] + (math.sin(angle) * orbitRadius)
-            newY = canvasCentre[1] + (math.cos(angle) * orbitRadius)
 
-            canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
-            self.volumeChange(newX, newY, canvasCentre)
+        while self.mode.get() == 1:
+            if not self.paused:
+                angle += (1/72*math.pi)
+                newX = canvasCentre[0] + (math.sin(angle) * orbitRadius)
+                newY = canvasCentre[1] + (math.cos(angle) * orbitRadius)
 
-            time.sleep(5/144)
+                canvas.moveto(audioSource, newX - radius/2, newY - radius/2)
+                self.volumeChange(newX, newY, canvasCentre)
+
+                time.sleep(5/144)
+            else:
+                time.sleep(0.2)
 
     def volumeChange(self, newX, newY, canvasCentre):
         distance = distanceBetweenPoints(canvasCentre[0], canvasCentre[1], newX, newY)
@@ -124,7 +129,7 @@ class Audio3DInterface:
         leftIntensity = ((((math.sin(angle-math.pi)/2)+0.5)/(3/2))+(1/3)) * intensityMultiplier #minimum audio level of 1/3
         rightIntensity = ((((math.sin(angle)/2)+0.5)/(3/2))+(1/3)) * intensityMultiplier
 
-        print(leftIntensity, rightIntensity)
+        #print(leftIntensity, rightIntensity)
         
         self.channel0.set_volume(leftIntensity, 0.0)
         self.channel1.set_volume(0.0, rightIntensity)
@@ -152,6 +157,9 @@ class Audio3DInterface:
         menubar.add_cascade(label="File", menu=fileMenu)
         fileMenu.add_command(label="Open", command=self.openFile)
 
+        settingsMenu = Menu(menubar, tearoff=False)
+        menubar.add_cascade(label="Settings", menu=settingsMenu, command=self.createSettingsWidgets)
+
         #Info Bar
         playbackText = Label(self.controlsFrame, text="No song playing")
         playbackText.grid(column=0, row=0, columnspan=2)
@@ -163,6 +171,9 @@ class Audio3DInterface:
         pauseButton.grid(row=1, column=1, padx=7, pady=10)
 
         #Modes
+        self.orbitThread = threading.Thread(target=self.orbitAudio, args=(audioSource, radius, canvas, canvasCentre, 100))
+        self.orbitThread.daemon = True
+
         modesLabel = Label(self.sideBar, text="Modes:", width=15)
         clickModeButton = Radiobutton(
             self.sideBar,
@@ -181,12 +192,13 @@ class Audio3DInterface:
             indicator=0,
             background="light blue",
             width=15,
-            command=lambda:threading.Thread(target=self.orbitAudio, args=(audioSource, radius, canvas, canvasCentre, 100)).start())
+            command=lambda:self.orbitThread.start())
         modesLabel.grid(row=0, column=1, padx=10, pady=1)
         clickModeButton.grid(row=1, column=1, padx=10, pady=1)
         orbitModeButton.grid(row=2, column=1, padx=10, pady=1)
 
-
+    def createSettingsWidgets(self):
+        pass
 
 def main():
     audioSys1 = Audio3DInterface()
